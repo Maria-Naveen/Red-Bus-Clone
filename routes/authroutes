@@ -3,6 +3,8 @@ const authRoutes = express.Router();
 const User = require("../models/User")
 const {hashGenerate} = require("../helpers/hash");
 const {hashValidator} = require("../helpers/hash");
+const {tokenGenerator} = require("../helpers/token");
+const authVerify = require("../helpers/authverify");
 authRoutes.post("/signup",async(req,res)=>{
     try{
         const hashedpassword = await hashGenerate(req.body.password);
@@ -31,11 +33,18 @@ authRoutes.post("/signin",async(req,res)=>{
             if(!checkUser){
                 res.send("Password is invalid");
             }
-            res.send("Login successful!");
+            else{
+                const token = await tokenGenerator(existingUser.email);
+                res.cookie("jwt",token,{httpOnly:true});
+                res.send(token);
+            }
         }
     }
     catch(err){
         res.send(err);
     }
 });
+authRoutes.get("/protected",authVerify,(req,res)=>{
+    res.send("I am protected route")
+})
 module.exports = authRoutes;
